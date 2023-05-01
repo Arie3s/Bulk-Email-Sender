@@ -76,7 +76,6 @@ def gui():
     subject_entry = tk.Entry(window,bd=4,width=40,font=("Times","9", "bold"))# subject entry
     subject_entry.place(x=120,y=180)
 
-    # Button Method
     def btn_click():
         nonlocal attachment_filename,email_body,email_list
         incr = (1/Total_emails)*100
@@ -97,19 +96,26 @@ def gui():
             attachment = MIMEApplication(f.read(), _subtype='png')
             attachment.add_header('content-disposition', 'attachment', filename=attachment_filename)
             msg.attach(attachment)
-        # send email to each recipient
+
         try:
             # create smtp connection
-            server = smtplib.SMTP(smtp_server, smtp_port)
-            server.starttls()
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+            #server.starttls()
+            server.ehlo()
             server.login(from_address, password)
             print("logged in")
             log("logged in .....")
+
+            # send email to each recipient
             for email in email_list:
                 try:
+                    # create a new copy of message for each recipient
+                    msg_to_send = MIMEMultipart()
+                    msg_to_send.attach(msg)
+                    msg_to_send['To'] = email
+
                     # send email
-                    msg['To'] = email
-                    server.sendmail(from_address, email, msg.as_string())
+                    server.sendmail(from_address, email, msg_to_send.as_string())
                     window.update_idletasks()
                     print(f'Email sent to {email}')
                     log(f'Email sent to {email}')
@@ -120,6 +126,7 @@ def gui():
                 except Exception as e:
                     print(f'Error sending email to {email}: {e}')
                     log(f'Error sending email to {email}: {e}')
+
             # close smtp connection
             server.quit()
             counter_label["text"]+=" Completed !"
@@ -127,6 +134,7 @@ def gui():
         except Exception as e:
             print("Error Logging in")
             log("Error Logging in....")
+
     def load_file():
         options = {
         'defaultextension': '.txt',
